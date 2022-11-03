@@ -49,7 +49,7 @@ public class FighterAnimationDemoFREE : MonoBehaviour {
 			animator.SetBool("Walk Backward", false);
 		}
 
-		if (Input.GetKey("p")) 
+		if (Input.GetKeyDown("p")) 
 		{
 			animator.SetTrigger("PunchTrigger");
 		}
