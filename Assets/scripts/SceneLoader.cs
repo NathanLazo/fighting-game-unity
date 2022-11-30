@@ -1,28 +1,37 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+
 public class SceneLoader : MonoBehaviour
 {
-    public void ChangeMainGameScene()
+    public Animator animator;
+
+    private void Start()
     {
-        SceneManager.LoadScene("main-game");
+        string nivelACargar = SceneLoadManager.siguienteNivel;
+        StartCoroutine(IniciarCarga(nivelACargar));
+    }
+    IEnumerator IniciarCarga(string nivel)
+    {
+        yield return new WaitForSeconds(2f);
+        AsyncOperation operation = SceneManager.LoadSceneAsync(nivel);
+        operation.allowSceneActivation = false;
+
+        while (!operation.isDone)
+        {
+            if (operation.progress >= 0.9f)
+            {
+                animator.SetTrigger("FadeOut");
+                StartCoroutine(ChangeScene(operation));
+            }
+            yield return null;
+        }
     }
 
-    public void ChangeMainMenuScene()
+    IEnumerator ChangeScene(AsyncOperation operation)
     {
-        SceneManager.LoadScene("main-menu");
-    }
-
-
-    public void ChangeCreditsScene()
-    {
-        SceneManager.LoadScene("credits");
-    }
-
-    public void ExitGame()
-    {
-        Application.Quit();
+        yield return new WaitForSeconds(1.3f);
+        operation.allowSceneActivation = true;
     }
 }

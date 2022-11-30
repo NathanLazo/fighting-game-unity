@@ -4,55 +4,57 @@ using UnityEngine;
 
 public class ThirdPersonController : MonoBehaviour
 {
-
+    // Character components
     public CharacterController controller;
+    private Animator animator;
 
-    public Vector3 moveDir;
-
+    // Movement variables
+    Vector3 move;
+    float x;
+    float z;
+    Vector3 moveDir;
     public float speed = 6f;
-    public float jumpHeight = 3f;
-
     public float turnSmoothTime = 0.1f;
-    float turnSmoothVelocity;
+    public float turnSmoothVelocity;
 
+    public static bool isPunching;
+    public static bool isPunchingSpecialAttack;
+    public static bool specialAttackCooldown = false;
+
+    // Cameras
     public Transform cam;
 
-    public bool isGrounded = true;
-
-    public float fallVelocity = 0f;
-
-    public float gravity = 9.81f;
 
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        animator = GetComponent<Animator>();
     }
 
     void Update()
     {
-        SetMovement();
         SetGravity();
+        SetMovement();
+        SetAnimations();
     }
+
+
 
     void SetGravity()
     {
-        if (isGrounded)
-        {
-            fallVelocity = -gravity * Time.deltaTime;
-            moveDir.y = fallVelocity;
-        }
-        else
-        {
-            fallVelocity -= gravity * Time.deltaTime;
-            moveDir.y = fallVelocity;
-        }
+        float gravity = -9.81f * Time.deltaTime;
+        Vector3 moveY = new Vector3(0, gravity, 0);
+        controller.Move(moveY);
     }
 
     void SetMovement()
     {
-        float x = Input.GetAxisRaw("Horizontal");
-        float z = Input.GetAxisRaw("Vertical");
-        Vector3 move = new Vector3(x, 0f, z);
+        //Get axis input
+        x = Input.GetAxisRaw("Horizontal");
+        z = Input.GetAxisRaw("Vertical");
+
+        //Set movement direction
+        move = new Vector3(x, 0f, z);
 
         if (move.magnitude >= 0.1f)
         {
@@ -65,13 +67,104 @@ public class ThirdPersonController : MonoBehaviour
             moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
             controller.Move(moveDir.normalized * speed * Time.deltaTime);
 
+
+            // Dash mechanic
             if (Input.GetKeyDown("space"))
             {
-                Debug.Log("Dash animation");
-                //move controller forward
-                controller.Move(moveDir.normalized * speed * Time.deltaTime * 16);
+                animator.SetTrigger("dash");
+            }
+
+
+            if (
+                animator.GetCurrentAnimatorStateInfo(0).IsTag("damage") ||
+                animator.GetCurrentAnimatorStateInfo(0).IsTag("special-attack") ||
+                animator.GetCurrentAnimatorStateInfo(0).IsTag("defense")
+                )
+            {
+                speed = 1.5f;
+            }
+            else if (!Input.GetKey(KeyCode.LeftShift))
+            {
+                speed = 6f;
+            }
+            else if (Input.GetKey(KeyCode.LeftShift))
+            {
+                speed = 12f;
             }
         }
 
+
     }
+
+
+    void SetAnimations()
+    {
+
+        if (!animator.GetCurrentAnimatorStateInfo(0).IsTag("damage"))
+        {
+
+            //If left mouse button is pressed
+            if (Input.GetMouseButtonDown(0))
+            {
+                animator.SetTrigger("damage");
+                isPunching = true;
+            }
+        }
+
+
+        if (
+            !animator.GetCurrentAnimatorStateInfo(0).IsTag("special-attack") &&
+            !specialAttackCooldown
+        )
+        {
+
+            //If "E" button is pressed
+            if (Input.GetKey(KeyCode.E))
+            {
+                animator.SetTrigger("special-attack");
+                isPunchingSpecialAttack = true;
+                StartCoroutine(SpecialAttackCooldown());
+            }
+        }
+
+        //player defense
+        if (Input.GetMouseButton(1))
+        {
+            animator.SetBool("defense", true);
+        }
+        else
+        {
+            animator.SetBool("defense", false);
+        }
+
+
+        //if player moves
+        if (move.magnitude >= 0.1f)
+        {
+            animator.SetBool("walk", true);
+        }
+        else
+        {
+            animator.SetBool("walk", false);
+        }
+
+        //if shift is pressed
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            animator.SetBool("run", true);
+        }
+        else
+        {
+            animator.SetBool("run", false);
+        }
+    }
+
+
+    IEnumerator SpecialAttackCooldown()
+    {
+        specialAttackCooldown = true;
+        yield return new WaitForSeconds(5f);
+        specialAttackCooldown = false;
+    }
+
 }
