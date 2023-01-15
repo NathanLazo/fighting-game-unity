@@ -1,4 +1,5 @@
 # fighting-game-unity
 Juego de peleas en unity - proyecto final TIE71M
-Nathan Octavio Lazo
-Jorge Eduardo Montanez Granados
+
+- Nathan Octavio Lazo
+- Jorge Eduardo Montanez Granados
